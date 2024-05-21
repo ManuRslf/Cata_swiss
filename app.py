@@ -4,9 +4,6 @@ import pandas as pd
 import os
 st.set_page_config(layout="wide")
 
-
-st.markdown(page_bg_img, unsafe_allow_html=True)
-
 # Fonction pour se connecter à la base de données
 def connection_to_DB():
     return db.connect(
