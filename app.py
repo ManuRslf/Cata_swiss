@@ -10,7 +10,7 @@ def connection_to_DB():
         host='127.0.0.1',
         database='cata_swiss',
         user='root',
-        password='Isaroatelo123',
+        password='xxx',
         port='3306'
     )
 
