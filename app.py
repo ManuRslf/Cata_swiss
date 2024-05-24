@@ -77,7 +77,36 @@ def get_top_10_mortelles():
     conn.close()
     return data
 
-
+#fonction pour obtenir les catas filtré selon les dates
+def get_cata_bydate(catastrophe_type, datefin):
+    conn = connection_to_DB()
+    query = f"""
+    SELECT 
+        c.IDCatastrophe,
+        l.Localite,
+        l.Region,
+        s.NBVictime,
+        d.Explication,
+        d.image_name,
+        d1.DateDebut,
+        d1.DateFin
+    FROM 
+        CatastropheNaturelle c
+    JOIN 
+        Statistique s ON c.IDStatistique = s.IDStatistique
+    JOIN 
+        Lieu l ON c.IDLieu = l.IDLieu
+    JOIN 
+        Description d ON c.IDDescription = d.IDDescription
+    join 
+        Duree d1 on c.IDDuree = d1.IDDuree 
+    JOIN 
+        {catastrophe_type} t ON c.IDCatastrophe = t.IDCatastrophe
+    where year(d1.DateFin) <= {datefin};
+    """
+    data = pd.read_sql(query, conn)
+    conn.close()
+    return data
 
 
 st.title('Base de donnée des plus grosses catastrophes naturelles répertoriées en Suisse')
