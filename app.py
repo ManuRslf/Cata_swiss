@@ -170,6 +170,9 @@ with col2:
         
         if st.button('Filtrer', on_click=click_button4):
             catastrophes_df = get_cata_bydate(catastrophe_type, datefiltre)
+            
+            if catastrophes_df.empty:
+                st.write(f"Pas de {catastrophe_type}s.")
             for index, row in catastrophes_df.iterrows():
                 st.subheader(f"Catastrophe ID: {row['IDCatastrophe']}")
                 print(row['Localite'])
