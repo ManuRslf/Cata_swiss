@@ -114,7 +114,7 @@ st.title('Base de donnée des plus grosses catastrophes naturelles répertoriée
 #deux colonne
 col1, col2 = st.columns(2)
 
-#toggle effect du bouton (nb bouton actuel: 3)
+#toggle effect du bouton (nb bouton actuel: 4)
 if 'button' not in st.session_state:
     st.session_state.button = False
 
@@ -124,6 +124,9 @@ if 'button2' not in st.session_state:
 if 'button3' not in st.session_state:
     st.session_state.button3 = False
     
+if 'button4' not in st.session_state:
+    st.session_state.button4 = False
+    
 def click_button():
     st.session_state.button = not st.session_state.button
 
@@ -132,6 +135,9 @@ def click_button2():
     
 def click_button3():
     st.session_state.button3 = not st.session_state.button3
+    
+def click_button4():
+    st.session_state.button4 = not st.session_state.button4
 
 
 
@@ -158,6 +164,41 @@ with col1:
 
 ###DEUXIEME COLONNE
 with col2:
+    #creation du widget pour le filtre
+    if st.session_state.button2:
+        datefiltre = st.number_input(f"{catastrophe_type}s jusqu'en ", min_value=0, value=0, step=1)
+        
+        if st.button('Filtrer', on_click=click_button4):
+            catastrophes_df = get_cata_bydate(catastrophe_type, datefiltre)
+            for index, row in catastrophes_df.iterrows():
+                st.subheader(f"Catastrophe ID: {row['IDCatastrophe']}")
+                print(row['Localite'])
+                if row['Localite'] == "None":
+                    st.write(f"Localité: inconnu")
+                else:
+                    st.write(f"Localité: {row['Localite']}")        
+                st.write(f"Région: {row['Region']}")
+                if row['NBVictime'] == "nan":
+                    st.write(f"Nombre de victimes: inconnu")
+                else:
+                    st.write(f"Nombre de victimes: {row['NBVictime']}")
+                
+                if row['DateDebut'][-2:] == row['DateFin'][-2:]:
+                    st.write(f"Date: {row['DateDebut']}")  
+                else: 
+                    st.write(f"Date de debut: {row['DateDebut']}")
+                    st.write(f"Date de debut: {row['DateFin']}")
+                st.write(f"Description: {row['Explication']}")
+                
+                
+                
+                image_path = os.path.join('Images\\', row['image_name'])
+                if os.path.exists(image_path):
+                    st.image(image_path)
+                else:
+                    st.write("Image non disponible")    
+    
+    
     # Bouton pour afficher les catastrophes du type sélectionné
     if st.button(f'Afficher les {catastrophe_type}s', on_click=click_button2):
 
@@ -182,5 +223,8 @@ with col2:
                     st.image(image_path)
                 else:
                     st.write("Image non disponible")
+    
+
+    
 
 
