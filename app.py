@@ -8,15 +8,15 @@ from datetime import datetime
 st.set_page_config(layout="wide")
 
 def normalisation_attribut(att):
-    if att == 'TemperatureMaxDegre': return 'Temperature maximale: '
-    if att == 'CourtDEau': return 'Court d\'eau: '
-    if att == 'VolumeRocheM3': return 'Volume des roches: '
-    if att == 'VolumeTombeeM3': return 'Volume des roches tombées: '
-    if att == 'DiametreGrelonCM': return 'Diamètre grelons (cm): '
+    if att == 'TemperatureMaxDegre': return 'Temperature maximale'
+    if att == 'CourtDEau': return 'Court d\'eau'
+    if att == 'VolumeRocheM3': return 'Volume des roches'
+    if att == 'VolumeTombeeM3': return 'Volume des roches tombées'
+    if att == 'DiametreGrelonCM': return 'Diamètre grelons (cm)'
     if att == 'HABrulee': return 'Hectares brulées: '
-    if att == 'VitesseVentMaxKMH': return 'Vitesse max du vent (km): '
-    if att == 'Magnitude': return 'Magnitude: '
-    return 'Date'
+    if att == 'VitesseVentMaxKMH': return 'Vitesse max du vent (km)'
+    if att == 'Magnitude': return 'Magnitude'
+    return 'No name'
 
 # Fonction pour se connecter à la base de données
 def connection_to_DB():
@@ -161,6 +161,7 @@ def get_cata_special(catastrophe_type, date):
         select = data_to_list[2:5] 
         conn.close()
         return dict(select)  
+    conn.close()
     return {}
 
 
@@ -262,7 +263,7 @@ with col2:
                 #affichage des particularités d'une catastrophe
                 cata_spec = get_cata_special(catastrophe_type, datefiltre)
                 
-                st.header(f"Données relatives aux {catastrophe_type}")
+                st.header(f"Données relatives aux {catastrophe_type}s")
                 if cata_spec == {}: st.write("Pas d'information.")
                 else:
                     final = {normalisation_attribut(key): cata_spec[key] for key in cata_spec}
