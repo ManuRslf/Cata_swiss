@@ -13,7 +13,7 @@ def normalisation_attribut(att):
     if att == 'VolumeRocheM3': return 'Volume des roches'
     if att == 'VolumeTombeeM3': return 'Volume des roches tombées'
     if att == 'DiametreGrelonCM': return 'Diamètre grelons (cm)'
-    if att == 'HABrulee': return 'Hectares brulées: '
+    if att == 'HABrulee': return 'Hectares brulées '
     if att == 'VitesseVentMaxKMH': return 'Vitesse max du vent (km)'
     if att == 'Magnitude': return 'Magnitude'
     return 'No name'
