@@ -10,7 +10,7 @@ def connection_to_DB():
         host='127.0.0.1',
         database='cata_swiss',
         user='root',
-        password='xxxx',
+        password='xxx',
         port='3306'
     )
 
@@ -77,7 +77,36 @@ def get_top_10_mortelles():
     conn.close()
     return data
 
-
+#fonction pour obtenir les catas filtré selon les dates
+def get_cata_bydate(catastrophe_type, datefin):
+    conn = connection_to_DB()
+    query = f"""
+    SELECT 
+        c.IDCatastrophe,
+        l.Localite,
+        l.Region,
+        s.NBVictime,
+        d.Explication,
+        d.image_name,
+        d1.DateDebut,
+        d1.DateFin
+    FROM 
+        CatastropheNaturelle c
+    JOIN 
+        Statistique s ON c.IDStatistique = s.IDStatistique
+    JOIN 
+        Lieu l ON c.IDLieu = l.IDLieu
+    JOIN 
+        Description d ON c.IDDescription = d.IDDescription
+    join 
+        Duree d1 on c.IDDuree = d1.IDDuree 
+    JOIN 
+        {catastrophe_type} t ON c.IDCatastrophe = t.IDCatastrophe
+    where year(d1.DateFin) <= {datefin};
+    """
+    data = pd.read_sql(query, conn)
+    conn.close()
+    return data
 
 
 st.title('Base de donnée des plus grosses catastrophes naturelles répertoriées en Suisse')
@@ -85,7 +114,7 @@ st.title('Base de donnée des plus grosses catastrophes naturelles répertoriée
 #deux colonne
 col1, col2 = st.columns(2)
 
-#toggle effect du bouton (nb bouton actuel: 3)
+#toggle effect du bouton (nb bouton actuel: 4)
 if 'button' not in st.session_state:
     st.session_state.button = False
 
@@ -95,6 +124,9 @@ if 'button2' not in st.session_state:
 if 'button3' not in st.session_state:
     st.session_state.button3 = False
     
+if 'button4' not in st.session_state:
+    st.session_state.button4 = False
+    
 def click_button():
     st.session_state.button = not st.session_state.button
 
@@ -103,21 +135,24 @@ def click_button2():
     
 def click_button3():
     st.session_state.button3 = not st.session_state.button3
+    
+def click_button4():
+    st.session_state.button4 = not st.session_state.button4
 
 
 
 with col1:
     # Bouton pour afficher toutes les catastrophes
-    st.button('Afficher toutes les catastrophes', on_click=click_button)
-    if st.session_state.button:
-        catastrophes_df = get_catastropheNaturelle()
-        st.write(catastrophes_df)
+    if st.button('Afficher toutes les catastrophes', on_click=click_button):
+        if st.session_state.button:
+            catastrophes_df = get_catastropheNaturelle()
+            st.write(catastrophes_df)
     # Bouton pour afficher les 10 catastrophes les plus mortelles     
-    st.button('Afficher les 10 catastrophes les plus mortelles', on_click=click_button3)
+    if st.button('Afficher les 10 catastrophes les plus mortelles', on_click=click_button3):
 
-    if st.session_state.button3:
-        top_10_mortelles_df = get_top_10_mortelles()
-        st.write(top_10_mortelles_df)
+        if st.session_state.button3:
+            top_10_mortelles_df = get_top_10_mortelles()
+            st.write(top_10_mortelles_df)
 
     # Menu déroulant pour sélectionner le type de catastrophe
     catastrophe_type = st.selectbox('Sélectionnez un type de catastrophe', get_catastrophe_types())
@@ -129,29 +164,70 @@ with col1:
 
 ###DEUXIEME COLONNE
 with col2:
-    # Bouton pour afficher les catastrophes du type sélectionné
-    st.button(f'Afficher les {catastrophe_type}s', on_click=click_button2)
-
+    #creation du widget pour le filtre
     if st.session_state.button2:
-        catastrophes_df = get_catastrophes_by_type(catastrophe_type)
-        for index, row in catastrophes_df.iterrows():
-            st.subheader(f"Catastrophe ID: {row['IDCatastrophe']}")
-            print(row['Localite'])
-            if row['Localite'] == "None":
-                st.write(f"Localité: inconnu")
-            else:
-                st.write(f"Localité: {row['Localite']}")        
-            st.write(f"Région: {row['Region']}")
-            if row['NBVictime'] == "nan":
-                st.write(f"Nombre de victimes: inconnu")
-            else:
-                st.write(f"Nombre de victimes: {row['NBVictime']}")
-            st.write(f"Description: {row['Explication']}")
+        datefiltre = st.number_input(f"{catastrophe_type}s jusqu'en ", min_value=0, value=0, step=1)
+        
+        if st.button('Filtrer', on_click=click_button4):
+            catastrophes_df = get_cata_bydate(catastrophe_type, datefiltre)
             
-            image_path = os.path.join('Images\\', row['image_name'])
-            if os.path.exists(image_path):
-                st.image(image_path)
-            else:
-                st.write("Image non disponible")
+            if catastrophes_df.empty:
+                st.write(f"Pas de {catastrophe_type}s.")
+            for index, row in catastrophes_df.iterrows():
+                st.subheader(f"Catastrophe ID: {row['IDCatastrophe']}")
+                print(row['Localite'])
+                if row['Localite'] == "None":
+                    st.write(f"Localité: inconnu")
+                else:
+                    st.write(f"Localité: {row['Localite']}")        
+                st.write(f"Région: {row['Region']}")
+                if row['NBVictime'] == "nan":
+                    st.write(f"Nombre de victimes: inconnu")
+                else:
+                    st.write(f"Nombre de victimes: {row['NBVictime']}")
+                
+                if row['DateDebut'][-2:] == row['DateFin'][-2:]:
+                    st.write(f"Date: {row['DateDebut']}")  
+                else: 
+                    st.write(f"Date de debut: {row['DateDebut']}")
+                    st.write(f"Date de debut: {row['DateFin']}")
+                st.write(f"Description: {row['Explication']}")
+                
+                
+                
+                image_path = os.path.join('Images\\', row['image_name'])
+                if os.path.exists(image_path):
+                    st.image(image_path)
+                else:
+                    st.write("Image non disponible")    
+    
+    
+    # Bouton pour afficher les catastrophes du type sélectionné
+    if st.button(f'Afficher les {catastrophe_type}s', on_click=click_button2):
+
+        if st.session_state.button2:
+            catastrophes_df = get_catastrophes_by_type(catastrophe_type)
+            for index, row in catastrophes_df.iterrows():
+                st.subheader(f"Catastrophe ID: {row['IDCatastrophe']}")
+                print(row['Localite'])
+                if row['Localite'] == "None":
+                    st.write(f"Localité: inconnu")
+                else:
+                    st.write(f"Localité: {row['Localite']}")        
+                st.write(f"Région: {row['Region']}")
+                if row['NBVictime'] == "nan":
+                    st.write(f"Nombre de victimes: inconnu")
+                else:
+                    st.write(f"Nombre de victimes: {row['NBVictime']}")
+                st.write(f"Description: {row['Explication']}")
+                
+                image_path = os.path.join('Images\\', row['image_name'])
+                if os.path.exists(image_path):
+                    st.image(image_path)
+                else:
+                    st.write("Image non disponible")
+    
+
+    
 
 
