@@ -16,7 +16,7 @@ def normalisation_attribut(att):
     if att == 'HABrulee': return 'Hectares brulées '
     if att == 'VitesseVentMaxKMH': return 'Vitesse max du vent (km)'
     if att == 'Magnitude': return 'Magnitude'
-    return 'No name'
+    return 'Date'
 
 # Fonction pour se connecter à la base de données
 def connection_to_DB():
