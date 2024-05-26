@@ -1,8 +1,22 @@
 import streamlit as st
 import mysql.connector as db
 import pandas as pd
+import numpy as np
 import os
+import datetime
+from datetime import datetime
 st.set_page_config(layout="wide")
+
+def normalisation_attribut(att):
+    if att == 'TemperatureMaxDegre': return 'Temperature maximale: '
+    if att == 'CourtDEau': return 'Court d\'eau: '
+    if att == 'VolumeRocheM3': return 'Volume des roches: '
+    if att == 'VolumeTombeeM3': return 'Volume des roches tombées: '
+    if att == 'DiametreGrelonCM': return 'Diamètre grelons (cm): '
+    if att == 'HABrulee': return 'Hectares brulées: '
+    if att == 'VitesseVentMaxKMH': return 'Vitesse max du vent (km): '
+    if att == 'Magnitude': return 'Magnitude: '
+    return 'Date'
 
 # Fonction pour se connecter à la base de données
 def connection_to_DB():
@@ -10,7 +24,7 @@ def connection_to_DB():
         host='127.0.0.1',
         database='cata_swiss',
         user='root',
-        password='xxx',
+        password='Isaroatelo123',
         port='3306'
     )
 
@@ -108,12 +122,53 @@ def get_cata_bydate(catastrophe_type, datefin):
     conn.close()
     return data
 
+#fonction pour recuperer les details unique de chaque cata
+def get_cata_special(catastrophe_type, date):
+    conn = connection_to_DB()
+    
+    query0 = f"""
+    SHOW COLUMNS FROM {catastrophe_type};
+    """
+    
+    data0 = pd.read_sql(query0, conn)
+    
+    if len(data0['Field']) == 2:
+        return {}
+    column_3 = data0['Field'][2] 
+    query = f"""
+    SELECT 
+        {catastrophe_type}.*,
+        YEAR(d1.DateDebut) as Date
+    FROM 
+        {catastrophe_type}
+    JOIN 
+        catastrophenaturelle c  ON {catastrophe_type}.IDCatastrophe = c.IDCatastrophe
+    JOIN
+        duree d1 ON c.IDDuree = d1.IDDuree
+    WHERE YEAR(d1.DateDebut) <= {date}
+            AND {catastrophe_type}.{column_3} IS NOT NULL
+    """
+    data = pd.read_sql(query, conn)
+    if data.empty: return {}
+    
+    data_to_list = list(data.items())
+    print(data_to_list)
+    if len(data_to_list) == 4:
+        select = data_to_list[2:4] 
+        conn.close()
+        return dict(select)
+    if len(data_to_list) == 5:
+        select = data_to_list[2:5] 
+        conn.close()
+        return dict(select)  
+    return {}
+
 
 st.title('Base de donnée des plus grosses catastrophes naturelles répertoriées en Suisse')
 
 #deux colonne
 col1, col2 = st.columns(2)
-
+#-------------------------------------------------------------------------------
 #toggle effect du bouton (nb bouton actuel: 4)
 if 'button' not in st.session_state:
     st.session_state.button = False
@@ -138,6 +193,8 @@ def click_button3():
     
 def click_button4():
     st.session_state.button4 = not st.session_state.button4
+    
+
 
 
 
@@ -156,7 +213,7 @@ with col1:
 
     # Menu déroulant pour sélectionner le type de catastrophe
     catastrophe_type = st.selectbox('Sélectionnez un type de catastrophe', get_catastrophe_types())
-
+    
 
 
 
@@ -168,7 +225,7 @@ with col2:
     if st.session_state.button2:
         datefiltre = st.number_input(f"{catastrophe_type}s jusqu'en ", min_value=0, value=0, step=1)
         
-        if st.button('Filtrer', on_click=click_button4):
+        if st.button('Filtrer', type='primary'):
             catastrophes_df = get_cata_bydate(catastrophe_type, datefiltre)
             
             if catastrophes_df.empty:
@@ -199,7 +256,25 @@ with col2:
                 if os.path.exists(image_path):
                     st.image(image_path)
                 else:
-                    st.write("Image non disponible")    
+                    st.write("Image non disponible")
+                
+            with col1:
+                #affichage des particularités d'une catastrophe
+                cata_spec = get_cata_special(catastrophe_type, datefiltre)
+                
+                st.header(f"Données relatives aux {catastrophe_type}")
+                if cata_spec == {}: st.write("Pas d'information.")
+                else:
+                    final = {normalisation_attribut(key): cata_spec[key] for key in cata_spec}
+                    # Convertir les données en DataFrame
+                    # Convertir les données en DataFrame
+                    df = pd.DataFrame(final)
+
+
+                    st.write(df)
+
+
+
     
     
     # Bouton pour afficher les catastrophes du type sélectionné
@@ -230,4 +305,6 @@ with col2:
 
     
 
+
+    
 
